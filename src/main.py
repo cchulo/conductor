@@ -3,6 +3,7 @@
 import argparse
 from add_shortcut import add_shortcut
 
+
 def main():
     parser = argparse.ArgumentParser(description="All in one steam game manager")
     subparsers = parser.add_subparsers(metavar="[command]", dest="command", help="Available commands")
