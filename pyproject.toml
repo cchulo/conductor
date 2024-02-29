@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conductor"
+version = "0.0.1"
+dependencies = [
+    "pyinstaller == 6.4.0",
+    "vdf == 3.4"
+]
+
+[project.scripts]
+cli-name = "src.main:main"
