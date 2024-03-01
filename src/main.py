@@ -22,7 +22,7 @@ def main():
     add_shortcut_command.add_argument(
         '--path',
         dest='path',
-        metavar='<path>',
+        metavar='<path/to/executable>',
         required=True,
         help='The full path to the executable')
     add_shortcut_command.add_argument(
@@ -31,6 +31,41 @@ def main():
         metavar='<compat_tool>',
         required=False,
         help='The name of the compatability tool to use')
+    add_shortcut_command.add_argument(
+        '--hero',
+        dest='hero',
+        metavar='<path/to/hero/image>',
+        required=False,
+        help='The path to the hero image'
+    )
+    add_shortcut_command.add_argument(
+        '--logo',
+        dest='logo',
+        metavar='<path/to/logo/image>',
+        required=False,
+        help='The path to the logo image'
+    )
+    add_shortcut_command.add_argument(
+        '--tenfoot',
+        dest='tenfoot',
+        metavar='<path/to/tenfoot/image>',
+        required=False,
+        help='The path to the tenfoot image'
+    )
+    add_shortcut_command.add_argument(
+        '--boxart',
+        dest='boxart',
+        metavar='<path/to/boxart/image>',
+        required=False,
+        help='The path to the boxart image'
+    )
+    add_shortcut_command.add_argument(
+        '--icon',
+        dest='icon',
+        metavar='<path/to/icon/image>',
+        required=False,
+        help='The path to the icon image'
+    )
 
     args = parser.parse_args()
 
@@ -38,7 +73,12 @@ def main():
         add_shortcut(
             app_name=args.name,
             exe_path=args.path,
-            compat_tool=args.compat_tool
+            compat_tool=args.compat_tool,
+            hero=args.hero,
+            logo=args.logo,
+            tenfoot=args.tenfoot,
+            boxart=args.boxart,
+            icon=args.icon
         )
 
 

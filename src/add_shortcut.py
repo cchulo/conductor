@@ -3,10 +3,20 @@ import os
 import vdf
 import error_codes as err
 import constants as const
+import shutil
 from pathlib import Path
 
 
-def add_shortcut(app_name: str, exe_path: str, compat_tool: str | None) -> int:
+def add_shortcut(
+        app_name: str,
+        exe_path: str,
+        compat_tool: str | None,
+        hero: str | None,
+        logo: str | None,
+        tenfoot: str | None,
+        boxart: str | None,
+        icon: str | None
+        ) -> int:
     expanded_exe_path = os.path.expanduser(exe_path)
 
     print(f'adding {expanded_exe_path} to steam...')
@@ -21,13 +31,14 @@ def add_shortcut(app_name: str, exe_path: str, compat_tool: str | None) -> int:
         return err.FILE_DOES_NOT_EXIST
     print(f'found steam user id: {user_id}')
 
-    app_id = modify_user_config_vdf(user_id, app_name, expanded_exe_path)
+    app_id = modify_user_config_vdf(user_id=user_id, app_name=app_name, expanded_exe_path=expanded_exe_path, icon=icon)
     set_compat_tool(app_id=app_id, compat_tool=compat_tool)
+    set_art_work(user_id=user_id, app_id=app_id, hero=hero, logo=logo, tenfoot=tenfoot, boxart=boxart)
 
     pass
 
 
-def modify_user_config_vdf(user_id: str, app_name: str, exe_path: str) -> str:
+def modify_user_config_vdf(user_id: str, app_name: str, expanded_exe_path: str, icon: str | None) -> str:
     shortcuts_vdf = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
 
     if not os.path.exists(shortcuts_vdf):
@@ -36,13 +47,13 @@ def modify_user_config_vdf(user_id: str, app_name: str, exe_path: str) -> str:
     with open(shortcuts_vdf, 'rb') as f:
         data = vdf.binary_loads(f.read())
 
-    signed_app_id = generate_shortcut_vdf_app_id(f'{app_name}{exe_path}')
+    signed_app_id = generate_shortcut_vdf_app_id(f'{app_name}{expanded_exe_path}')
     unsigned_app_id = str(int(signed_app_id)+2**32)
 
     print('summary of shortcut to add:')
     print(f'app id: {unsigned_app_id}')
     print(f'app name: {app_name}')
-    print(f'exe path: {exe_path}')
+    print(f'exe path: {expanded_exe_path}')
 
     if 'shortcuts' not in data:
         data['shortcuts'] = {}
@@ -51,9 +62,9 @@ def modify_user_config_vdf(user_id: str, app_name: str, exe_path: str) -> str:
     data['shortcuts']['0'] = {
         'appid': signed_app_id,
         'AppName': app_name,
-        'Exe': exe_path,
-        'StartDir': f'"{os.path.dirname(exe_path)}"',  # wrapped in quotes since this is how steam does it
-        'icon': '',
+        'Exe': expanded_exe_path,
+        'StartDir': f'"{os.path.dirname(expanded_exe_path)}"',  # wrapped in quotes since this is how steam does it
+        'icon': '' if icon is None else icon,
         'ShortcutPath': '',
         'LaunchOptions': '',
         'IsHidden': 0,
@@ -113,6 +124,47 @@ def find_steam_user_id() -> str | None:
         print(f'userdata directory {userdata_path} does not contain any accounts')
         return None
     return steam_user_id[0]
+
+
+def set_art_work(
+        user_id: str,
+        app_id: str,
+        hero: str | None,
+        logo: str | None,
+        tenfoot: str | None,
+        boxart: str | None) -> bool:
+    grid_dir = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'grid'))
+    os.makedirs(grid_dir, exist_ok=True)
+    success = True
+    if hero is not None and not os.path.exists(hero):
+        print(f'hero image {hero} does not exist')
+        success = False
+    if logo is not None and not os.path.exists(logo):
+        print(f'logo image {logo} does not exist')
+        success = False
+    if tenfoot is not None and not os.path.exists(tenfoot):
+        print(f'tenfoot image {tenfoot} does not exist')
+        success = False
+    if boxart is not None and not os.path.exists(boxart):
+        print(f'boxart image {boxart} does not exist')
+        success = False
+    if not success:
+        return False
+
+    copy_artwork(app_id, grid_dir, hero, f'{app_id}_hero')
+    copy_artwork(app_id, grid_dir, logo, f'{app_id}_logo')
+    copy_artwork(app_id, grid_dir, tenfoot, f'{app_id}')
+    copy_artwork(app_id, grid_dir, boxart, f'{app_id}p')
+
+    return True
+
+
+def copy_artwork(app_id: str, grid_dir: str, src: str | None, dest_name: str) -> None:
+    if src is None:
+        return
+    extension = os.path.splitext(src)[1]
+    dest = os.path.join(grid_dir, f'{dest_name}{extension}')
+    shutil.copy(src, dest)
 
 
 def generate_shortcut_vdf_app_id(seed_str) -> str:
