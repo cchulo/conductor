@@ -1,10 +1,12 @@
 import hashlib
 import os
 import conductor.cli.error_codes as err
-import conductor.lib.constants as const
 import shutil
 from conductor.lib.vdf_file import VdfFile
 from conductor.lib.steam_helper import find_steam_user_id
+from conductor.lib.constants import STEAM_USERDATA_PATH, \
+    STEAM_COMPAT_TOOLS_PATH, \
+    STEAM_CONFIG_VDF_PATH
 
 
 def register_options(subparsers) -> None:
@@ -114,12 +116,12 @@ def modify_user_config_vdf(
         expanded_exe_path: str,
         icon: str | None,
         launch_options: str | None) -> str:
-    shortcuts_vdf_path = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
+    shortcuts_vdf_path = os.path.expanduser(os.path.join(STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
 
     shortcuts_vdf = VdfFile(shortcuts_vdf_path, binary=True, create_if_not_exists=True)
 
     signed_app_id = generate_shortcut_vdf_app_id(f'{app_name}{expanded_exe_path}')
-    unsigned_app_id = str(int(signed_app_id)+2**32)
+    unsigned_app_id = str(int(signed_app_id) + 2**32)
 
     print('summary of shortcut to add:')
     print(f'app id: {unsigned_app_id}')
@@ -128,9 +130,19 @@ def modify_user_config_vdf(
 
     if 'shortcuts' not in shortcuts_vdf.data:
         shortcuts_vdf.data['shortcuts'] = {}
-    if '0' not in shortcuts_vdf.data['shortcuts']:
-        shortcuts_vdf.data['shortcuts']['0'] = {}
-    shortcuts_vdf.data['shortcuts']['0'] = {
+
+    i = 0
+    index = ''
+    while True:
+        index = str(i)
+        if index not in shortcuts_vdf.data['shortcuts']:
+            shortcuts_vdf.data['shortcuts'][index] = {}
+            break
+        i += 1
+
+    if index not in shortcuts_vdf.data['shortcuts']:
+        shortcuts_vdf.data['shortcuts'][index] = {}
+    shortcuts_vdf.data['shortcuts'][index] = {
         'appid': signed_app_id,
         'AppName': app_name,
         'Exe': expanded_exe_path,
@@ -149,6 +161,7 @@ def modify_user_config_vdf(
         'FlatpakAppId': '',
         'tags': {}
     }
+
     shortcuts_vdf.save()
 
     # convert to unsigned int since that's what users expect
@@ -158,13 +171,13 @@ def modify_user_config_vdf(
 def set_compat_tool(app_id: str, compat_tool: str | None) -> None:
     if compat_tool is None:
         return
-    compat_tool_path = os.path.expanduser(os.path.join(const.STEAM_COMPAT_TOOLS_PATH, compat_tool))
+    compat_tool_path = os.path.expanduser(os.path.join(STEAM_COMPAT_TOOLS_PATH, compat_tool))
     if not os.path.exists(compat_tool_path):
         print(f'compat tool {compat_tool} does not exist')
         return
     print(f'setting compat tool to {compat_tool}')
 
-    config_vdf = VdfFile(const.STEAM_CONFIG_VDF_PATH)
+    config_vdf = VdfFile(STEAM_CONFIG_VDF_PATH)
 
     if 'CompatToolMapping' not in config_vdf.data:
         config_vdf.data['CompatToolMapping'] = {}
@@ -185,7 +198,7 @@ def set_art_work(
         logo: str | None,
         tenfoot: str | None,
         boxart: str | None) -> bool:
-    grid_dir = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'grid'))
+    grid_dir = os.path.expanduser(os.path.join(STEAM_USERDATA_PATH, user_id, 'config', 'grid'))
     os.makedirs(grid_dir, exist_ok=True)
     success = True
     if hero is not None and not os.path.exists(hero):
@@ -203,15 +216,15 @@ def set_art_work(
     if not success:
         return False
 
-    copy_artwork(app_id, grid_dir, hero, f'{app_id}_hero')
-    copy_artwork(app_id, grid_dir, logo, f'{app_id}_logo')
-    copy_artwork(app_id, grid_dir, tenfoot, f'{app_id}')
-    copy_artwork(app_id, grid_dir, boxart, f'{app_id}p')
+    copy_artwork(grid_dir, hero, f'{app_id}_hero')
+    copy_artwork(grid_dir, logo, f'{app_id}_logo')
+    copy_artwork(grid_dir, tenfoot, f'{app_id}')
+    copy_artwork(grid_dir, boxart, f'{app_id}p')
 
     return True
 
 
-def copy_artwork(app_id: str, grid_dir: str, src: str | None, dest_name: str) -> None:
+def copy_artwork(grid_dir: str, src: str | None, dest_name: str) -> None:
     if src is None:
         return
     extension = os.path.splitext(src)[1]
