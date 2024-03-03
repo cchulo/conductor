@@ -14,6 +14,7 @@ def main():
     parser.add_argument('--version', action='store_true', help='Print the version of conductor')
     subparsers = parser.add_subparsers(metavar="[command]", dest="command", help="Available commands")
 
+    # register commands
     info.register_options(subparsers)
     add_shortcut.register_options(subparsers)
 
@@ -22,21 +23,24 @@ def main():
     if args.version:
         print_version()
 
+    result = 0
     match args.command:
         case 'info':
-            info.command()
+            result = info.command()
         case 'add_shortcut':
-            add_shortcut.command(
-                app_name=args.name,
-                exe_path=args.path,
+            result = add_shortcut.command(
+                app_name=args.app_name,
+                exe_path=args.exe_path,
                 compat_tool=args.compat_tool,
                 hero=args.hero,
                 logo=args.logo,
                 tenfoot=args.tenfoot,
                 boxart=args.boxart,
                 icon=args.icon,
-                launch_options=args.launch_options
+                launch_options=args.launch_options,
+                dry_run=args.dry_run
             )
+    sys.exit(result)
 
 
 def print_version():
