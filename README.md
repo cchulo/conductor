@@ -29,7 +29,7 @@ cd /path/to/conductor/project/root
 python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -e .
-src/conductor/__main__.py --help
+python3 ./src/conductor/cli --help
 ```
 
 ## How to build conductor-cli
