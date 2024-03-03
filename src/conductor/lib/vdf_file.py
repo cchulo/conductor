@@ -11,7 +11,7 @@ class VdfFile:
         self.data = self.load_vdf(create_if_not_exists)
 
     def load_vdf(self, create_if_not_exists=False):
-        if not os.path.exists(self.vdf_path):
+        if not os.path.exists(self.vdf_path) and create_if_not_exists:
             Path(self.vdf_path).touch()
 
         if self.binary:

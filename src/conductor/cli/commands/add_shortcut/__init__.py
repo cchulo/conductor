@@ -1,6 +1,7 @@
 import hashlib
+import json
 import os
-import conductor.cli.error_codes as err
+import error_codes as err
 import shutil
 from conductor.lib.vdf_file import VdfFile
 from conductor.lib.steam_helper import find_steam_user_id
@@ -71,6 +72,13 @@ def register_options(subparsers) -> None:
         required=False,
         help='The launch options for the shortcut'
     )
+    add_shortcut_command.add_argument(
+        '--dry-run, -d',
+        dest='dry_run',
+        action='store_true',
+        required=False,
+        help='Performs a dry run'
+    )
 
 
 def command(
@@ -90,12 +98,12 @@ def command(
 
     if not os.path.isabs(expanded_exe_path):
         print(f'path {expanded_exe_path} is not a full path')
-        return err.PATH_NOT_ABSOLUTE
+        return err.ERROR_PATH_NOT_ABSOLUTE
     user_id = find_steam_user_id()
 
     if user_id is None:
         print('could not find steam user id')
-        return err.STEAM_USER_NOT_FOUND
+        return err.ERROR_STEAM_USER_NOT_FOUND
     print(f'found steam user id: {user_id}')
 
     app_id = modify_user_config_vdf(
@@ -107,7 +115,7 @@ def command(
     set_compat_tool(app_id=app_id, compat_tool=compat_tool)
     set_art_work(user_id=user_id, app_id=app_id, hero=hero, logo=logo, tenfoot=tenfoot, boxart=boxart)
 
-    pass
+    return 0
 
 
 def modify_user_config_vdf(
@@ -132,7 +140,6 @@ def modify_user_config_vdf(
         shortcuts_vdf.data['shortcuts'] = {}
 
     i = 0
-    index = ''
     while True:
         index = str(i)
         if index not in shortcuts_vdf.data['shortcuts']:
@@ -142,7 +149,7 @@ def modify_user_config_vdf(
 
     if index not in shortcuts_vdf.data['shortcuts']:
         shortcuts_vdf.data['shortcuts'][index] = {}
-    shortcuts_vdf.data['shortcuts'][index] = {
+    entry = {
         'appid': signed_app_id,
         'AppName': app_name,
         'Exe': expanded_exe_path,
@@ -162,19 +169,23 @@ def modify_user_config_vdf(
         'tags': {}
     }
 
+    print('adding', json.dumps(entry))
+
+    shortcuts_vdf.data['shortcuts'][index] = entry
+
     shortcuts_vdf.save()
 
     # convert to unsigned int since that's what users expect
     return unsigned_app_id
 
 
-def set_compat_tool(app_id: str, compat_tool: str | None) -> None:
+def set_compat_tool(app_id: str, compat_tool: str | None) -> int:
     if compat_tool is None:
-        return
+        return 0
     compat_tool_path = os.path.expanduser(os.path.join(STEAM_COMPAT_TOOLS_PATH, compat_tool))
     if not os.path.exists(compat_tool_path):
         print(f'compat tool {compat_tool} does not exist')
-        return
+        return err.ERROR_COMPAT_TOOL_DOES_NOT_EXIST
     print(f'setting compat tool to {compat_tool}')
 
     config_vdf = VdfFile(STEAM_CONFIG_VDF_PATH)
@@ -189,6 +200,7 @@ def set_compat_tool(app_id: str, compat_tool: str | None) -> None:
         'name': compat_tool
     }
     config_vdf.save()
+    return 0
 
 
 def set_art_work(
@@ -197,7 +209,7 @@ def set_art_work(
         hero: str | None,
         logo: str | None,
         tenfoot: str | None,
-        boxart: str | None) -> bool:
+        boxart: str | None) -> int:
     grid_dir = os.path.expanduser(os.path.join(STEAM_USERDATA_PATH, user_id, 'config', 'grid'))
     os.makedirs(grid_dir, exist_ok=True)
     success = True
@@ -214,14 +226,14 @@ def set_art_work(
         print(f'boxart image {boxart} does not exist')
         success = False
     if not success:
-        return False
+        return err.ERROR_ART_NOT_PROPERLY_SET
 
     copy_artwork(grid_dir, hero, f'{app_id}_hero')
     copy_artwork(grid_dir, logo, f'{app_id}_logo')
     copy_artwork(grid_dir, tenfoot, f'{app_id}')
     copy_artwork(grid_dir, boxart, f'{app_id}p')
 
-    return True
+    return 0
 
 
 def copy_artwork(grid_dir: str, src: str | None, dest_name: str) -> None:
