@@ -12,7 +12,10 @@ All in one solution for managing all games within steam.
   - Letting the user define virtual file systems for mods, much like [Mod Organizer 2](https://www.nexusmods.com/skyrimspecialedition/mods/6194)
   but for linux
 - Letting the user define game profiles that specify launch options, environment variables, etc. for official steam games
-in an effort to make linux gaming even more accessible
+in an effort to make linux gaming even more accessible.
+  - Allow users to share these profiles with others
+  - Find a way to allow users to map these profiles with their hardware configurations to make it easier for others to discover
+  compatibility fixes
 
 ## Development
 
@@ -25,11 +28,11 @@ in an effort to make linux gaming even more accessible
 Recommended to use virtual environments to avoid conflicts with system packages.
 
 ```bash
-cd /path/to/conductor/project/root
-python3 -m venv .venv
-source .venv/bin/activate
-pip3 install -e .
-python3 ./src/conductor/cli --help
+$ cd /path/to/conductor/project/root
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+$ pip3 install -e .
+$ python3 ./src/conductor/cli --help
 ```
 
 ## How to build conductor-cli
@@ -37,19 +40,37 @@ python3 ./src/conductor/cli --help
 Currently, the project uses pyinstaller to build the binary. This is subject to change.
 
 ```bash
-cd /path/to/conductor/project/root
-./scripts/build.sh
-./bin/conductor-cli --help
+$ cd /path/to/conductor/project/root
+$ ./scripts/build.sh
+$ ./bin/conductor-cli --help
 ```
 
 To clean up all build artifacts, run:
 
 ```bash
-./scripts/clean.sh
+$ ./scripts/clean.sh
 ```
 
-## Usage
+## how to use conductor-cli
     
 ```bash
-conductor-cli --help
+$ ./bin/conductor-cli --help
+usage: conductor-cli [-h] [--version] [command] ...
+
+All in one steam game manager
+
+positional arguments:
+  [command]     Available commands
+    add_shortcut
+                adds an executable shortcut to steam
+
+options:
+  -h, --help    show this help message and exit
+  --version     Print the version of conductor
+
 ```
+
+### Commands
+
+- [add_shortcut](src/conductor/cli/commands/add_shortcut/README.md)
+

@@ -14,13 +14,13 @@ def register_options(subparsers) -> None:
         dest='name',
         metavar='<name>',
         required=True,
-        help='The name of the shortcut')
+        help='(Required) The name of the shortcut')
     add_shortcut_command.add_argument(
         '--path',
         dest='path',
         metavar='<path/to/executable>',
         required=True,
-        help='The full path to the executable')
+        help='(Required) The full path to the executable')
     add_shortcut_command.add_argument(
         '--compat-tool',
         dest='compat_tool',
