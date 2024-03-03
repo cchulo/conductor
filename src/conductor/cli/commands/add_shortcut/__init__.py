@@ -91,6 +91,7 @@ def command(
         boxart: str | None,
         icon: str | None,
         launch_options: str | None,
+        dry_run: bool = False
         ) -> int:
     expanded_exe_path = os.path.expanduser(exe_path)
 
@@ -111,9 +112,11 @@ def command(
         app_name=app_name,
         expanded_exe_path=expanded_exe_path,
         icon=icon,
-        launch_options=launch_options)
-    set_compat_tool(app_id=app_id, compat_tool=compat_tool)
-    set_art_work(user_id=user_id, app_id=app_id, hero=hero, logo=logo, tenfoot=tenfoot, boxart=boxart)
+        launch_options=launch_options,
+        dry_run=dry_run
+    )
+    set_compat_tool(app_id=app_id, compat_tool=compat_tool, dry_run=dry_run)
+    set_art_work(user_id=user_id, app_id=app_id, hero=hero, logo=logo, tenfoot=tenfoot, boxart=boxart, dry_run=dry_run)
 
     return 0
 
@@ -123,7 +126,9 @@ def modify_user_config_vdf(
         app_name: str,
         expanded_exe_path: str,
         icon: str | None,
-        launch_options: str | None) -> str:
+        launch_options: str | None,
+        dry_run: bool = False
+    ) -> str:
     shortcuts_vdf_path = os.path.expanduser(os.path.join(STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
 
     shortcuts_vdf = VdfFile(shortcuts_vdf_path, binary=True, create_if_not_exists=True)
@@ -135,6 +140,8 @@ def modify_user_config_vdf(
     print(f'app id: {unsigned_app_id}')
     print(f'app name: {app_name}')
     print(f'exe path: {expanded_exe_path}')
+    print(f'icon: {icon}')
+    print(f'launch options: {launch_options}')
 
     if 'shortcuts' not in shortcuts_vdf.data:
         shortcuts_vdf.data['shortcuts'] = {}
@@ -149,7 +156,10 @@ def modify_user_config_vdf(
 
     if index not in shortcuts_vdf.data['shortcuts']:
         shortcuts_vdf.data['shortcuts'][index] = {}
-    entry = {
+
+    print('original shortcuts_vdf', shortcuts_vdf.pretty_print(indent=False, show_unsigned_app_id=False))
+
+    shortcuts_vdf.data['shortcuts'][index] = {
         'appid': signed_app_id,
         'AppName': app_name,
         'Exe': expanded_exe_path,
@@ -169,17 +179,16 @@ def modify_user_config_vdf(
         'tags': {}
     }
 
-    print('adding', json.dumps(entry))
+    print('modified shortcuts_vdf.data', shortcuts_vdf.pretty_print(indent=False, show_unsigned_app_id=False))
 
-    shortcuts_vdf.data['shortcuts'][index] = entry
-
-    shortcuts_vdf.save()
+    if not dry_run:
+        shortcuts_vdf.save()
 
     # convert to unsigned int since that's what users expect
     return unsigned_app_id
 
 
-def set_compat_tool(app_id: str, compat_tool: str | None) -> int:
+def set_compat_tool(app_id: str, compat_tool: str | None, dry_run: bool = False  ) -> int:
     if compat_tool is None:
         return 0
     compat_tool_path = os.path.expanduser(os.path.join(STEAM_COMPAT_TOOLS_PATH, compat_tool))
@@ -199,7 +208,10 @@ def set_compat_tool(app_id: str, compat_tool: str | None) -> int:
     config_vdf.data['CompatToolMapping'][app_id] = {
         'name': compat_tool
     }
-    config_vdf.save()
+
+    if not dry_run:
+        config_vdf.save()
+
     return 0
 
 
@@ -209,7 +221,9 @@ def set_art_work(
         hero: str | None,
         logo: str | None,
         tenfoot: str | None,
-        boxart: str | None) -> int:
+        boxart: str | None,
+        dry_run: bool = False,
+        ) -> int:
     grid_dir = os.path.expanduser(os.path.join(STEAM_USERDATA_PATH, user_id, 'config', 'grid'))
     os.makedirs(grid_dir, exist_ok=True)
     success = True
@@ -228,20 +242,22 @@ def set_art_work(
     if not success:
         return err.ERROR_ART_NOT_PROPERLY_SET
 
-    copy_artwork(grid_dir, hero, f'{app_id}_hero')
-    copy_artwork(grid_dir, logo, f'{app_id}_logo')
-    copy_artwork(grid_dir, tenfoot, f'{app_id}')
-    copy_artwork(grid_dir, boxart, f'{app_id}p')
+    copy_artwork(grid_dir, hero, f'{app_id}_hero', dry_run=dry_run)
+    copy_artwork(grid_dir, logo, f'{app_id}_logo', dry_run=dry_run)
+    copy_artwork(grid_dir, tenfoot, f'{app_id}', dry_run=dry_run)
+    copy_artwork(grid_dir, boxart, f'{app_id}p', dry_run=dry_run)
 
     return 0
 
 
-def copy_artwork(grid_dir: str, src: str | None, dest_name: str) -> None:
+def copy_artwork(grid_dir: str, src: str | None, dest_name: str, dry_run: bool = False) -> None:
     if src is None:
         return
     extension = os.path.splitext(src)[1]
     dest = os.path.join(grid_dir, f'{dest_name}{extension}')
-    shutil.copy(src, dest)
+    print(f'copying {src} to {dest}')
+    if not dry_run:
+        shutil.copy(src, dest)
 
 
 def generate_shortcut_vdf_app_id(seed_str) -> str:

@@ -29,7 +29,15 @@ class VdfFile:
             with open(self.vdf_path, 'w+') as f:
                 vdf.dump(self.data, f, pretty=True)
 
-    def pretty_print(self):
+    def pretty_print(self, indent: bool = True, show_unsigned_app_id: bool = True) -> str:
+        if indent:
+            json_indent = 4
+        else:
+            json_indent = None
+
+        if not show_unsigned_app_id and self.data is not None:
+            return json.dumps(self.data, indent=json_indent, sort_keys=True)
+
         if self.data is not None:
             # we do not want to modify the original contents, so we reload the file again
             duplicate = self.load_vdf()
@@ -43,6 +51,6 @@ class VdfFile:
                         entry['appid'] = dup_appid + 2**32
             print('original', self.data)
             # because VDFDict is a subclass of dict, we can use the json module to pretty print it
-            return json.dumps(duplicate, indent=4, sort_keys=True)
+            return json.dumps(duplicate, indent=json_indent, sort_keys=True)
         else:
             return 'No data available'
