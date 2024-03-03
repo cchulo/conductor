@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-import commands.add_shortcut as add_shortcut
+from commands import info, add_shortcut
 import importlib.metadata
 
 
@@ -14,6 +14,7 @@ def main():
     parser.add_argument('--version', action='store_true', help='Print the version of conductor')
     subparsers = parser.add_subparsers(metavar="[command]", dest="command", help="Available commands")
 
+    info.register_options(subparsers)
     add_shortcut.register_options(subparsers)
 
     args = parser.parse_args()
@@ -21,18 +22,21 @@ def main():
     if args.version:
         print_version()
 
-    if args.command == 'add_shortcut':
-        add_shortcut.command(
-            app_name=args.name,
-            exe_path=args.path,
-            compat_tool=args.compat_tool,
-            hero=args.hero,
-            logo=args.logo,
-            tenfoot=args.tenfoot,
-            boxart=args.boxart,
-            icon=args.icon,
-            launch_options=args.launch_options
-        )
+    match args.command:
+        case 'info':
+            info.command()
+        case 'add_shortcut':
+            add_shortcut.command(
+                app_name=args.name,
+                exe_path=args.path,
+                compat_tool=args.compat_tool,
+                hero=args.hero,
+                logo=args.logo,
+                tenfoot=args.tenfoot,
+                boxart=args.boxart,
+                icon=args.icon,
+                launch_options=args.launch_options
+            )
 
 
 def print_version():
