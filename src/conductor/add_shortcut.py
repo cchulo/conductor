@@ -1,10 +1,10 @@
 import hashlib
 import os
-import vdf
 import error_codes as err
 import constants as const
 import shutil
-from pathlib import Path
+from vdf_file import VdfFile
+from steam_helper import find_steam_user_id
 
 
 def add_shortcut(
@@ -50,13 +50,9 @@ def modify_user_config_vdf(
         expanded_exe_path: str,
         icon: str | None,
         launch_options: str | None) -> str:
-    shortcuts_vdf = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
+    shortcuts_vdf_path = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
 
-    if not os.path.exists(shortcuts_vdf):
-        Path(shortcuts_vdf).touch()
-
-    with open(shortcuts_vdf, 'rb') as f:
-        data = vdf.binary_loads(f.read())
+    shortcuts_vdf = VdfFile(shortcuts_vdf_path, binary=True, create_if_not_exists=True)
 
     signed_app_id = generate_shortcut_vdf_app_id(f'{app_name}{expanded_exe_path}')
     unsigned_app_id = str(int(signed_app_id)+2**32)
@@ -66,11 +62,11 @@ def modify_user_config_vdf(
     print(f'app name: {app_name}')
     print(f'exe path: {expanded_exe_path}')
 
-    if 'shortcuts' not in data:
-        data['shortcuts'] = {}
-    if '0' not in data['shortcuts']:
-        data['shortcuts']['0'] = {}
-    data['shortcuts']['0'] = {
+    if 'shortcuts' not in shortcuts_vdf.data:
+        shortcuts_vdf.data['shortcuts'] = {}
+    if '0' not in shortcuts_vdf.data['shortcuts']:
+        shortcuts_vdf.data['shortcuts']['0'] = {}
+    shortcuts_vdf.data['shortcuts']['0'] = {
         'appid': signed_app_id,
         'AppName': app_name,
         'Exe': expanded_exe_path,
@@ -89,9 +85,7 @@ def modify_user_config_vdf(
         'FlatpakAppId': '',
         'tags': {}
     }
-    b = vdf.binary_dumps(data)
-    with open(shortcuts_vdf, 'wb') as f:
-        f.write(b)
+    shortcuts_vdf.save()
 
     # convert to unsigned int since that's what users expect
     return unsigned_app_id
@@ -106,35 +100,18 @@ def set_compat_tool(app_id: str, compat_tool: str | None) -> None:
         return
     print(f'setting compat tool to {compat_tool}')
 
-    with open(const.STEAM_CONFIG_VDF_PATH, 'r') as f:
-        config_data = vdf.loads(f.read(), mapper=vdf.VDFDict)
-        data = config_data['InstallConfigStore']['Software']['Valve']['Steam']
+    config_vdf = VdfFile(const.STEAM_CONFIG_VDF_PATH)
 
-    if 'CompatToolMapping' not in data:
-        data['CompatToolMapping'] = {}
+    if 'CompatToolMapping' not in config_vdf.data:
+        config_vdf.data['CompatToolMapping'] = {}
 
-    if app_id in data['CompatToolMapping']:
-        data['CompatToolMapping'].remove_all_for(app_id)
+    if app_id in config_vdf.data['CompatToolMapping']:
+        config_vdf.data['CompatToolMapping'].remove_all_for(app_id)
 
-    data['CompatToolMapping'][app_id] = {
+    config_vdf.data['CompatToolMapping'][app_id] = {
         'name': compat_tool
     }
-    with open(const.STEAM_CONFIG_VDF_PATH, 'w+') as f:
-        vdf.dump(config_data, f, pretty=True)
-
-
-def find_steam_user_id() -> str | None:
-    # steam user id is the name of the directory in the steamapps directory
-    # this is the default location for steam library
-    userdata_path = os.path.expanduser(const.STEAM_USERDATA_PATH)
-    if not os.path.exists(userdata_path):
-        print(f'userdata directory does not exist at {userdata_path}')
-        return ''
-    steam_user_id = os.listdir(userdata_path)
-    if len(steam_user_id) == 0:
-        print(f'userdata directory {userdata_path} does not contain any accounts')
-        return None
-    return steam_user_id[0]
+    config_vdf.save()
 
 
 def set_art_work(
