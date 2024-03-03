@@ -3,4 +3,4 @@
 rm -rf bin
 rm -rf build
 rm -rf **/*.egg-info
-rm -f **/*.spec
+rm -rf *.spec
