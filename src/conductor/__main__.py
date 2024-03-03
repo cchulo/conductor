@@ -66,6 +66,13 @@ def main():
         required=False,
         help='The path to the icon image'
     )
+    add_shortcut_command.add_argument(
+        '--launch-options',
+        dest='launch_options',
+        metavar='<launch options>',
+        required=False,
+        help='The launch options for the shortcut'
+    )
 
     args = parser.parse_args()
 
@@ -78,7 +85,8 @@ def main():
             logo=args.logo,
             tenfoot=args.tenfoot,
             boxart=args.boxart,
-            icon=args.icon
+            icon=args.icon,
+            launch_options=args.launch_options
         )
 
 

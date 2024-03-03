@@ -15,7 +15,8 @@ def add_shortcut(
         logo: str | None,
         tenfoot: str | None,
         boxart: str | None,
-        icon: str | None
+        icon: str | None,
+        launch_options: str | None,
         ) -> int:
     expanded_exe_path = os.path.expanduser(exe_path)
 
@@ -28,17 +29,27 @@ def add_shortcut(
 
     if user_id is None:
         print('could not find steam user id')
-        return err.FILE_DOES_NOT_EXIST
+        return err.STEAM_USER_NOT_FOUND
     print(f'found steam user id: {user_id}')
 
-    app_id = modify_user_config_vdf(user_id=user_id, app_name=app_name, expanded_exe_path=expanded_exe_path, icon=icon)
+    app_id = modify_user_config_vdf(
+        user_id=user_id,
+        app_name=app_name,
+        expanded_exe_path=expanded_exe_path,
+        icon=icon,
+        launch_options=launch_options)
     set_compat_tool(app_id=app_id, compat_tool=compat_tool)
     set_art_work(user_id=user_id, app_id=app_id, hero=hero, logo=logo, tenfoot=tenfoot, boxart=boxart)
 
     pass
 
 
-def modify_user_config_vdf(user_id: str, app_name: str, expanded_exe_path: str, icon: str | None) -> str:
+def modify_user_config_vdf(
+        user_id: str,
+        app_name: str,
+        expanded_exe_path: str,
+        icon: str | None,
+        launch_options: str | None) -> str:
     shortcuts_vdf = os.path.expanduser(os.path.join(const.STEAM_USERDATA_PATH, user_id, 'config', 'shortcuts.vdf'))
 
     if not os.path.exists(shortcuts_vdf):
@@ -66,7 +77,7 @@ def modify_user_config_vdf(user_id: str, app_name: str, expanded_exe_path: str, 
         'StartDir': f'"{os.path.dirname(expanded_exe_path)}"',  # wrapped in quotes since this is how steam does it
         'icon': '' if icon is None else icon,
         'ShortcutPath': '',
-        'LaunchOptions': '',
+        'LaunchOptions': launch_options if launch_options is not None else '',
         'IsHidden': 0,
         'AllowDesktopConfig': 1,
         'AllowOverlay': 1,
