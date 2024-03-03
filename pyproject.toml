@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.entry-points."console_scripts"]
-cli-name = "conductor.__main__:main"
+cli-name = "conductor.cli.__main__:main"
 
 [build-system]
 requires = ["setuptools"]

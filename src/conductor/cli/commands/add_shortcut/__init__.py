@@ -1,10 +1,10 @@
 import hashlib
 import os
-import error_codes as err
-import constants as const
+import conductor.error_codes as err
+import conductor.constants as const
 import shutil
-from vdf_file import VdfFile
-from steam_helper import find_steam_user_id
+from conductor.vdf_file import VdfFile
+from conductor.steam_helper import find_steam_user_id
 
 
 def register_options(subparsers) -> None:

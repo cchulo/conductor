@@ -1,5 +1,5 @@
 import os
-from constants import STEAM_USERDATA_PATH
+from src.conductor.lib.constants import STEAM_USERDATA_PATH
 
 
 def find_steam_user_id() -> str | None:
