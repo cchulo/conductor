@@ -11,8 +11,8 @@ usage: conductor-cli add_shortcut [-h] --name <name> --path <path/to/executable>
 
 options:
   -h, --help            show this help message and exit
-  --name <name>         (Required) The name of the shortcut
-  --path <path/to/executable>
+  --app-name <name>     (Required) The name of the shortcut
+  --exe-path <path/to/executable>
                         (Required) The full path to the executable
   --compat-tool <compat_tool>
                         The name of the compatability tool to use
@@ -28,6 +28,7 @@ options:
                         The path to the icon image
   --launch-options <launch options>
                         The launch options for the shortcut
+  --dry-run             Performs a dry run
 ```
 
 Example usage:
@@ -56,4 +57,6 @@ $ ./bin/conductor-cli add_shortcut \
 if it happens to work anyway, it will be considered undefined behavior as I do not have a complete understanding of how steam is coded
 - The images are assumed to be in a format that steam can understand, and they are assumed to be in a location that steam can access
 - The launch options are passed directly to the executable, so they should be formatted as such
-- It is entirely possible that there can be collisions with steam shortcuts. The algorithm used to generate random AppId was taken directly from SteamTinkerLaunch
+- It is entirely possible that there can be collisions with steam shortcuts. The algorithm used to generate random AppId was taken directly from SteamTinkerLaunch.
+Added a mitigation for this to prevent duplicate AppIds from being generated, but it is not guaranteed to be foolproof.
+Will need to fall back to a different seeding method if this becomes a problem.
