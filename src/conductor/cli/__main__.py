@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-import conductor.commands.add_shortcut as add_shortcut
+import commands.add_shortcut as add_shortcut
 import importlib.metadata
 
 
