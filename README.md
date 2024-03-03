@@ -72,5 +72,6 @@ options:
 
 ### Commands
 
+- [info](src/conductor/cli/commands/info/README.md)
 - [add_shortcut](src/conductor/cli/commands/add_shortcut/README.md)
 
